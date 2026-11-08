@@ -33,7 +33,7 @@ impl Cli {
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
-                let command_def = self.get_command(used_command);
+                let command_def = self.get_command(used_command).unwrap();
 
                 println!(
                     "tip: Arguments for '{}' command are: {}",
@@ -56,7 +56,7 @@ impl Cli {
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
-                let command_def = self.get_command(used_command);
+                let command_def = self.get_command(used_command).unwrap();
 
                 println!(
                     "tip: Arguments for '{}' command are: {}",
@@ -79,7 +79,7 @@ impl Cli {
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
-                let command_def = self.get_command(used_command);
+                let command_def = self.get_command(used_command).unwrap();
 
                 println!(
                     "tip: Options for '{}' command are: {}",
@@ -105,7 +105,7 @@ impl Cli {
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
-                let command_def = self.get_command(used_command);
+                let command_def = self.get_command(used_command).unwrap();
 
                 let opt_def = &command_def.options[idx];
 
@@ -131,7 +131,7 @@ impl Cli {
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
-                let command_def = self.get_command(used_command);
+                let command_def = self.get_command(used_command).unwrap();
 
                 let mut long_flags = Vec::new();
                 let mut short_flags = Vec::new();

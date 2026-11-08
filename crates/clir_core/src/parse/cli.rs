@@ -1,69 +1,10 @@
 use std::{collections::HashMap, iter::Peekable};
 
-use crate::{Cli, CliArgument, CliOption, error::ParseError};
-
-// The Box<dyn Any> represents either None or a String
-pub enum ParsedArg {
-    None,
-    Value(String),
-    Variadic(Vec<String>),
-}
-impl ParsedArg {
-    pub fn is_none(&self) -> bool {
-        matches!(self, ParsedArg::None)
-    }
-    pub fn as_value(self) -> String {
-        let Self::Value(v) = self else {
-            panic!("ERROR: Cast `ParsedArg` as value failed");
-        };
-
-        v
-    }
-    pub fn as_variadic(self) -> Vec<String> {
-        let Self::Variadic(v) = self else {
-            panic!("ERROR: Cast `ParsedArg` as variadic failed");
-        };
-
-        v
-    }
-}
-
-pub enum ParsedOpt {
-    None,
-    Flag(bool),
-    Value(String),
-    Args(ParsedArgs),
-}
-
-impl ParsedOpt {
-    pub fn is_none(&self) -> bool {
-        matches!(self, ParsedOpt::None)
-    }
-    pub fn as_flag(self) -> bool {
-        let Self::Flag(v) = self else {
-            panic!("ERROR: Cast `ParsedOpt` as flag failed");
-        };
-
-        v
-    }
-    pub fn as_value(self) -> String {
-        let Self::Value(v) = self else {
-            panic!("ERROR: Cast `ParsedOpt` as value failed");
-        };
-
-        v
-    }
-    pub fn as_args(self) -> HashMap<String, ParsedArg> {
-        let Self::Args(v) = self else {
-            panic!("ERROR: Cast `ParsedOpt` as args failed");
-        };
-
-        v
-    }
-}
-
-pub type ParsedArgs = HashMap<String, ParsedArg>;
-pub type ParsedOpts = HashMap<String, ParsedOpt>;
+use crate::{
+    Cli, CliArgument, CliOption,
+    error::ParseError,
+    parse::{ParsedArg, ParsedArgs, ParsedOpt, ParsedOpts},
+};
 
 impl Cli {
     pub fn parse(&mut self, env_args: Vec<String>) -> (ParsedArgs, ParsedOpts) {
@@ -77,50 +18,45 @@ impl Cli {
             }
         }
     }
+
     fn try_parse(&mut self, env_args: Vec<String>) -> Result<(ParsedArgs, ParsedOpts), ParseError> {
-        let potential_cmd_name = &env_args
-            .first()
-            .map(|s| s.to_owned())
-            .unwrap_or("".to_owned());
+        let potential_cmd_name = env_args.first().map(String::as_str).unwrap_or("");
 
-        let potential_cmd_name = potential_cmd_name.as_str();
-
+        // Handle help
         if potential_cmd_name == "help" {
-            let second = env_args.get(1).map(|s| s.to_owned());
+            let command_name = env_args.get(1).map(String::as_str).unwrap_or("cli");
 
-            if let Some(second) = second {
-                if let None = self.commands.iter().find(|cmd| cmd.name == second) {
-                    return Err(ParseError::InvalidCommand(second.to_string()));
-                }
-
-                self.show_help(&second);
-            } else {
-                self.show_help("cli");
+            if command_name != "cli" && !self.commands.iter().any(|cmd| cmd.name == command_name) {
+                return Err(ParseError::InvalidCommand(command_name.to_owned()));
             }
+
+            self.show_help(command_name);
             std::process::exit(0);
         }
 
-        let possible_command_names = self
+        // Find command
+        let command_def = if let Some(cmd) = self
             .commands
             .iter()
-            .map(|cmd| cmd.name.as_str())
-            .collect::<Vec<&str>>();
-
-        let mut env_args = env_args.into_iter();
-        let command_def = if possible_command_names.contains(&potential_cmd_name) {
+            .find(|cmd| cmd.name == potential_cmd_name)
+        {
             self.used_command = Some(potential_cmd_name.to_owned());
-            env_args.next();
-            self.commands
-                .iter()
-                .find(|cmd| cmd.name == potential_cmd_name)
-                .unwrap()
-        } else if possible_command_names.contains(&"cli") {
+            cmd
+        } else if let Some(cmd) = self.commands.iter().find(|cmd| cmd.name == "cli") {
             self.used_command = Some("cli".to_owned());
-            &self.commands.iter().find(|cmd| cmd.name == "cli").unwrap()
+            cmd
         } else {
-            return Err(ParseError::InvalidCommand(potential_cmd_name.to_string()));
+            return Err(ParseError::InvalidCommand(potential_cmd_name.to_owned()));
         };
-        let env_args = env_args.collect::<Vec<String>>();
+
+        // Skip command name when one was explicitly provided
+        let args_start = if command_def.name == potential_cmd_name {
+            1
+        } else {
+            0
+        };
+
+        let env_args = env_args.into_iter().skip(args_start).collect();
 
         let (parsed_args, parsed_opts) = Self::parse_args(
             env_args,
@@ -138,7 +74,9 @@ impl Cli {
     ) -> Result<(ParsedArgs, ParsedOpts), ParseError> {
         let mut parsed_args = Self::initialize_parsed_args(&template_args);
         let mut parsed_opts = Self::initialize_parsed_opts(&template_opts);
+
         let mut tokens = env_args.into_iter().peekable();
+
         let mut positional_idx = 0;
 
         while let Some(token) = tokens.next() {
@@ -161,8 +99,8 @@ impl Cli {
                 }
 
                 // Handle positional arguments for option
-                let opt_args = opt_def.args.clone();
-                let mut parsed_opt_args = Self::initialize_parsed_args(&opt_args);
+                let opt_args = &opt_def.args;
+                let mut parsed_opt_args = Self::initialize_parsed_args(opt_args);
                 let mut idx = 0;
 
                 while idx < parsed_opt_args.len() {
@@ -189,9 +127,7 @@ impl Cli {
 
                 Self::check_for_missing_required_args(&opt_args, idx, Some(opt_idx))?;
 
-                if opt_def.args.len() > 1 {
-                    parsed_opts.insert(opt_def.name.clone(), ParsedOpt::Args(parsed_opt_args));
-                }
+                parsed_opts.insert(opt_def.name.clone(), ParsedOpt::Args(parsed_opt_args));
             } else {
                 // Check if we've gone past the number of positional arguments
                 if positional_idx >= template_args.len() {
@@ -214,9 +150,6 @@ impl Cli {
         Ok((parsed_args, parsed_opts))
     }
 
-    // ------------------------------------------------------------
-    // Utils
-    // ------------------------------------------------------------
     fn parse_arg(
         arg_def: &CliArgument,
         current_token: String,
@@ -233,10 +166,11 @@ impl Cli {
             Ok(ParsedArg::Value(current_token))
         }
     }
+}
 
-    // ------------------------------------------------------------
-    // Validation methods
-    // ------------------------------------------------------------
+// ----- Validation
+
+impl Cli {
     fn check_for_missing_required_opts(
         parsed_opts: &ParsedOpts,
         template_opts: &Vec<CliOption>,
@@ -248,15 +182,7 @@ impl Cli {
                 let is_missing = parsed_opts.get(&opt.name).unwrap().is_none();
 
                 if is_missing {
-                    Some(format!(
-                        "({})",
-                        opt.flags
-                            .values()
-                            .iter()
-                            .filter_map(|f| f.as_ref().map(|s| s.to_string()))
-                            .collect::<Vec<String>>()
-                            .join(", ")
-                    ))
+                    Some(format!("({})", opt.flags))
                 } else {
                     None
                 }
@@ -296,16 +222,14 @@ impl Cli {
 
         Ok(())
     }
-    // ------------------------------------------------------------
-    // Boolean Utils
-    // ------------------------------------------------------------
+}
+
+// ----- Utils
+
+impl Cli {
     fn is_option_token(token: &str) -> bool {
         token.starts_with('-') && token != "-"
     }
-
-    // ------------------------------------------------------------
-    // Initialization Utils
-    // ------------------------------------------------------------
     fn initialize_parsed_args(template_args: &Vec<CliArgument>) -> ParsedArgs {
         let mut parsed_args: ParsedArgs = HashMap::new();
         for arg in template_args {
