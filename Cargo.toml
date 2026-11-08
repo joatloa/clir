@@ -1,0 +1,36 @@
+[package]
+name = "clir"
+description = "A small proc-macro DSL for defining command-line interfaces."
+categories = ["command-line-interface"]
+keywords = [
+  "argument",
+  "cli",
+  "arg",
+  "parser",
+  "parse"
+]
+version = "0.1.0"
+readme = "./README.md"
+edition = {workspace = true}
+license = {workspace = true}
+repository = {workspace = true}
+
+[lib]
+
+[workspace]
+resolver = "2"
+members = ["crates/clir_core", "crates/clir_macro",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/joatloa/clir"
+
+[dependencies]
+clir_macro = { version = "0.1.0", path = "crates/clir_macro" }
+clir_core = { version = "0.1.0", path = "crates/clir_core" }
+
+[[example]]
+name = "string_utils"
+path = "examples/string_utils.rs"

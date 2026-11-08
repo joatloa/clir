@@ -1,0 +1,10 @@
+[package]
+name = "clir_core"
+description = "Runtime support crate for clir (argument/option parsing + help/error formatting)."
+version = "0.1.0"
+categories = ["command-line-interface"]
+keywords = ["cli", "argument", "parser"]
+readme = "./README.md"
+edition = {workspace = true}
+license = {workspace = true}
+repository = {workspace = true}
