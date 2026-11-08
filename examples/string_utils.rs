@@ -1,4 +1,4 @@
-use dsl_cli::cli;
+use clir::cli;
 
 cli! {
     name "string_utils",
