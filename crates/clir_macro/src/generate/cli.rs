@@ -14,6 +14,14 @@ pub fn generate_opt_def(opt: &CliOption) -> TokenStream2 {
     let (opt_name, flags_expr, opt_desc, optional) = get_option_values(opt);
     let opt_arg_defs: Vec<TokenStream2> = opt.arguments.iter().map(generate_arg_def).collect();
 
+    let add_arguments = if opt_arg_defs.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            opt #(.add_argument(#opt_arg_defs))*;
+        }
+    };
+
     quote! {
         {
             let mut opt = clir::clir_core::CliOption::new(
@@ -23,7 +31,7 @@ pub fn generate_opt_def(opt: &CliOption) -> TokenStream2 {
                 #optional,
             );
 
-            opt #(.add_argument(#opt_arg_defs))*;
+            #add_arguments
 
             opt
         }

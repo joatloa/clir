@@ -127,7 +127,9 @@ impl Cli {
 
                 Self::check_for_missing_required_args(&opt_args, idx, Some(opt_idx))?;
 
-                parsed_opts.insert(opt_def.name.clone(), ParsedOpt::Args(parsed_opt_args));
+                if opt_def.args.len() > 1 {
+                    parsed_opts.insert(opt_def.name.clone(), ParsedOpt::Args(parsed_opt_args));
+                }
             } else {
                 // Check if we've gone past the number of positional arguments
                 if positional_idx >= template_args.len() {

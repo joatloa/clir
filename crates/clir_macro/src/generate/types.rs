@@ -203,19 +203,19 @@ pub fn generate_match_arms(dsl: &CliDsl) -> Vec<TokenStream2> {
 // -------------------------------------------------------------------------------------------
 
 pub fn generate_impls(dsl: &CliDsl) -> (Vec<TokenStream2>, Vec<TokenStream2>) {
-    let args_from_parsed: Vec<TokenStream2> = dsl
+    let from_parsed_impl_args: Vec<TokenStream2> = dsl
         .commands
         .iter()
         .map(generate_from_parsed_impl_for_args)
         .collect();
 
-    let opts_from_parsed: Vec<TokenStream2> = dsl
+    let from_parsed_impl_opts: Vec<TokenStream2> = dsl
         .commands
         .iter()
         .map(generate_from_parsed_impl_for_opts)
         .collect();
 
-    (args_from_parsed, opts_from_parsed)
+    (from_parsed_impl_args, from_parsed_impl_opts)
 }
 
 pub fn generate_from_parsed_impl_for_args(cmd: &Command) -> TokenStream2 {
@@ -382,7 +382,7 @@ fn generate_arg_extraction(
             return quote! {
                 let #field_name: #field_type = {
                     let val = parsed.remove(#field_name_str).unwrap();
-                    val.as_value().parse().unwrap()
+                    val.as_value().parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`"))
                 };
             };
         }
@@ -391,8 +391,9 @@ fn generate_arg_extraction(
             return quote! {
                 let #field_name: #field_type = {
                     let val = parsed.remove(#field_name_str).unwrap();
+                    dbg!(&val);
                     if !val.is_none() {
-                        Some(val.as_value().parse().unwrap())
+                        Some(val.as_value().parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`")))
                     } else {
                         None
                     }
@@ -405,7 +406,7 @@ fn generate_arg_extraction(
                 let #field_name: #field_type = {
                     let val = parsed.remove(#field_name_str).unwrap();
                     let vec_val = val.as_variadic();
-                    vec_val.iter().map(|s| s.parse().unwrap()).collect()
+                    vec_val.iter().map(|s| s.parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`"))).collect()
                 };
             };
         }
@@ -416,7 +417,7 @@ fn generate_arg_extraction(
                     let val = parsed.remove(#field_name_str).unwrap();
                     if !val.is_none() {
                         let vec_val = val.as_variadic();
-                        Some(vec_val.iter().map(|s| s.parse().unwrap()).collect())
+                        Some(vec_val.iter().map(|s| s.parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`"))).collect())
                     } else {
                         None
                     }
@@ -431,7 +432,7 @@ fn generate_arg_extraction(
                     let val = parsed.remove(#field_name_str).unwrap();
                     if !val.is_none() {
                         let vec_val = val.as_variadic();
-                        vec_val.iter().map(|s| s.parse().unwrap()).collect()
+                        vec_val.iter().map(|s| s.parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`"))).collect()
                     } else {
                         #default_val
                     }
@@ -445,7 +446,7 @@ fn generate_arg_extraction(
                 let #field_name: #field_type = {
                     let val = parsed.remove(#field_name_str).unwrap();
                     if !val.is_none() {
-                        val.as_value().parse().unwrap()
+                        val.as_value().parse().expect(concat!("Encountered an error while processing field `", stringify!(#field_name), "`"))
                     } else {
                         #default_val
                     }

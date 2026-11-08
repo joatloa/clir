@@ -28,7 +28,7 @@ Add the dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clir = "0.4.2"
+clir = "0.1.0"
 ```
 
 Or using cargo:

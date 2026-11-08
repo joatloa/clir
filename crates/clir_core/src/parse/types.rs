@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::ParsedArgs;
 
 // ----- ParsedArg
-
+#[derive(Debug)]
 pub enum ParsedArg {
     None,
     Value(String),
@@ -30,7 +30,7 @@ impl ParsedArg {
 }
 
 // ----- ParsedOpt
-
+#[derive(Debug)]
 pub enum ParsedOpt {
     None,
     Flag(bool),
