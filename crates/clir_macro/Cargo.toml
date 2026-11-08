@@ -1,6 +1,6 @@
 [package]
 name = "clir_macro"
-description = "Proc-macro implementation for the clir CLI DSL."
+description = "Proc-macro implementation for the crate `clir`."
 version = "0.1.0"
 categories = ["command-line-interface"]
 keywords = ["cli", "proc-macro", "dsl"]
