@@ -9,17 +9,13 @@ pub struct CliCommand {
 }
 
 impl CliCommand {
-    pub fn new(name: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, description: Option<impl Into<String>>) -> Self {
         Self {
             name: name.into(),
-            description: None,
+            description: description.map(|s| s.into()),
             options: Vec::new(),
             arguments: Vec::new(),
         }
-    }
-    pub fn add_description(&mut self, description: impl Into<String>) -> &mut Self {
-        self.description = Some(description.into());
-        self
     }
     pub fn add_argument(&mut self, argument: CliArgument) -> &mut Self {
         self.arguments.push(argument);

@@ -28,8 +28,12 @@ impl Cli {
             used_command: None,
         }
     }
-    pub fn add_command(&mut self, command_name: impl Into<String>) -> &mut CliCommand {
-        let command = CliCommand::new(command_name);
+    pub fn add_command(
+        &mut self,
+        command_name: impl Into<String>,
+        description: Option<impl Into<String>>,
+    ) -> &mut CliCommand {
+        let command = CliCommand::new(command_name, description);
         self.commands.push(command);
         self.commands.last_mut().unwrap()
     }

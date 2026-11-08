@@ -8,13 +8,13 @@ pub struct CliArgument {
 
 impl CliArgument {
     pub fn new(
-        arg_name: String,
+        arg_name: impl Into<String>,
         description: Option<impl Into<String>>,
         optional: bool,
         variadic: bool,
     ) -> Self {
         Self {
-            name: arg_name,
+            name: arg_name.into(),
             description: description.map(|d| d.into()),
             optional: optional,
             variadic: variadic,
