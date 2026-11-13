@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 use crate::{
     Cli,
     error::{ParseError, suggest_similar::suggest_similar},
@@ -6,13 +8,14 @@ use crate::{
 impl Cli {
     pub fn handle_parse_error(&self, e: ParseError) {
         match e {
-            ParseError::InvalidCommand(command) => {
+            ParseError::MissingCommand => {
                 // Error Message
-                eprintln!("error: Invalid command: {}\n", command);
+                eprintln!("{} Missing command\n", "error:".red());
 
                 // Tip Message
                 println!(
-                    "tip: Available commands: {}",
+                    "{} Available commands: {}",
+                    "tip:".yellow(),
                     self.commands
                         .iter()
                         .map(|cmd| cmd.name.clone())
@@ -20,14 +23,34 @@ impl Cli {
                         .join(", ")
                 );
                 println!(
-                    "( For more help on commands run: {} help )",
-                    self.executable_name
+                    "( For more help on commands run: {} )",
+                    format!("{} help", self.executable_name).blue()
+                );
+            }
+            ParseError::UnknownCommand(command) => {
+                // Error Message
+                eprintln!("{} Unknown command '{}'\n", "error:".red(), command);
+
+                // Tip Message
+                println!(
+                    "{} Available commands: {}",
+                    "tip:".yellow(),
+                    self.commands
+                        .iter()
+                        .map(|cmd| cmd.name.clone())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                );
+                println!(
+                    "( For more help on commands run: {} )",
+                    format!("{} help", self.executable_name).blue()
                 );
             }
             ParseError::TooManyArguments(args) => {
                 // Error Message
                 eprintln!(
-                    "error: Arguments: {:?} exceeded the maximum number of arguments\n",
+                    "{} Arguments: {:?} exceeded the maximum number of arguments\n",
+                    "error:".red(),
                     args
                 );
 
@@ -36,7 +59,8 @@ impl Cli {
                 let command_def = self.get_command(used_command).unwrap();
 
                 println!(
-                    "tip: Arguments for '{}' command are: {}",
+                    "{} Arguments for '{}' command are: {}",
+                    "tip:".yellow(),
                     used_command,
                     command_def
                         .arguments
@@ -46,20 +70,25 @@ impl Cli {
                         .join(", ")
                 );
                 println!(
-                    "( For more help on arguments run: {} help {} )",
-                    self.executable_name, used_command
+                    "( For more help on arguments run: {} )",
+                    format!("{} help {}", self.executable_name, used_command).blue()
                 );
             }
             ParseError::MissingRequiredArguments(args) => {
                 // Error Message
-                eprintln!("error: Missing required arguments: {:?}\n", args.join(" "));
+                eprintln!(
+                    "{} Missing required arguments: {:?}\n",
+                    "error:".red(),
+                    args.join(" ")
+                );
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
                 let command_def = self.get_command(used_command).unwrap();
 
                 println!(
-                    "tip: Arguments for '{}' command are: {}",
+                    "{} Arguments for '{}' command are: {}",
+                    "tip:".yellow(),
                     used_command,
                     command_def
                         .arguments
@@ -69,20 +98,25 @@ impl Cli {
                         .join(", ")
                 );
                 println!(
-                    "( For more help on required arguments run: {} help {} )",
-                    self.executable_name, used_command
+                    "( For more help on required arguments run: {} )",
+                    format!("{} help {}", self.executable_name, used_command).blue()
                 );
             }
             ParseError::MissingRequiredOptions(opts) => {
                 // Error Message
-                eprintln!("error: Missing required options: {:?}\n", opts.join(", "));
+                eprintln!(
+                    "{} Missing required options: {:?}\n",
+                    "error:".red(),
+                    opts.join(", ")
+                );
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
                 let command_def = self.get_command(used_command).unwrap();
 
                 println!(
-                    "tip: Options for '{}' command are: {}",
+                    "{} Options for '{}' command are: {}",
+                    "tip:".yellow(),
                     used_command,
                     command_def
                         .options
@@ -92,14 +126,15 @@ impl Cli {
                         .join(", ")
                 );
                 println!(
-                    "( For more help on options run: {} help {} )",
-                    self.executable_name, used_command
+                    "( For more help on options run: {} )",
+                    format!("{} help {}", self.executable_name, used_command).blue()
                 );
             }
             ParseError::MissingRequiredArgumentsForOption(idx, args) => {
                 // Error Message
                 eprintln!(
-                    "error: Missing required arguments for option: {:?}\n",
+                    "{} Missing required arguments for option: {:?}\n",
+                    "error:".red(),
                     args.join(" ")
                 );
 
@@ -110,7 +145,8 @@ impl Cli {
                 let opt_def = &command_def.options[idx];
 
                 println!(
-                    "tip: Option '{}' is defined as: {} {}",
+                    "{} Option '{}' is defined as: {} {}",
+                    "tip:".yellow(),
                     used_command,
                     opt_def.flags.to_string(),
                     opt_def
@@ -121,13 +157,13 @@ impl Cli {
                         .join(" ")
                 );
                 println!(
-                    "( For more help on option arguments run: {} help {} )",
-                    self.executable_name, used_command
+                    "( For more help on option arguments run: {} )",
+                    format!("{} help {}", self.executable_name, used_command).blue()
                 );
             }
             ParseError::InvalidOptionFlag(flag) => {
                 // Error Message
-                eprintln!("error: Invalid option flag: {:?}\n", flag);
+                eprintln!("{} Invalid option flag: {:?}\n", "error:".red(), flag);
 
                 // Tip Message
                 let used_command = self.used_command.as_ref().unwrap();
@@ -149,18 +185,18 @@ impl Cli {
                 }
 
                 if flag.starts_with("--") {
-                    println!("tip: {}", suggest_similar(flag, long_flags));
+                    println!("{} {}", "tip:".yellow(), suggest_similar(flag, long_flags));
                 } else {
                     println!(
-                        "tip: Available short flags for `{}` are: {}",
+                        "{} Available short flags for `{}` are: {}",
+                        "tip:".yellow(),
                         used_command,
                         short_flags.join(", ")
                     );
                 }
                 println!(
-                    "( For more help on options run: `{} help {}` )",
-                    self.executable_name,
-                    self.used_command.as_ref().unwrap()
+                    "( For more help on options run: {})",
+                    format!("{} help {}", self.executable_name, used_command).blue()
                 );
             }
         }

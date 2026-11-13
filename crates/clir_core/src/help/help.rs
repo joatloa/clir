@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 use crate::{Cli, utilities::Info};
 
 impl Cli {
@@ -19,7 +21,15 @@ impl Cli {
 
         let max_width = Self::info_max_width(&commands);
 
-        println!("\nUsage: {} <command> [options]", self.executable_name);
+        println!("\n{} - v{}", self.name, self.version);
+
+        println!("\n{}", self.description);
+
+        println!(
+            "\n{} {} <command> [options]",
+            "Usage:".green(),
+            self.executable_name
+        );
 
         Self::print_section("Commands", &commands, max_width);
 
@@ -28,8 +38,7 @@ impl Cli {
 
     fn show_command_help(&self, command_name: &str) {
         let Some(command) = self.commands.iter().find(|cmd| cmd.name == command_name) else {
-            self.print_unknown_command(command_name);
-            return;
+            unreachable!()
         };
 
         let args = command.args_info();
@@ -39,7 +48,7 @@ impl Cli {
 
         let usage = Self::build_usage(&self.executable_name, command_name, &args, !opts.is_empty());
 
-        println!("\nUsage: {}", usage);
+        println!("\n{} {}", "Usage:".green(), usage);
 
         println!(
             "\n{}",
@@ -88,18 +97,10 @@ impl Cli {
             return;
         }
 
-        println!("\n{}:", title);
+        println!("\n{}:", title.green());
 
         for Info { name, description } in items {
-            println!("  {:<width$}{}", name, description, width = width);
+            println!("  {:<width$}{}", name.blue(), description, width = width);
         }
-    }
-
-    fn print_unknown_command(&self, command_name: &str) {
-        println!("\nUnknown command: {}", command_name);
-        println!(
-            "Run '{} help' to see available commands.\n",
-            self.executable_name
-        );
     }
 }

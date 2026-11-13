@@ -14,7 +14,7 @@ impl Cli {
             Ok((parsed_args, parsed_opts)) => (parsed_args, parsed_opts),
             Err(e) => {
                 self.handle_parse_error(e);
-                std::process::exit(1);
+                std::process::exit(0);
             }
         }
     }
@@ -27,7 +27,7 @@ impl Cli {
             let command_name = env_args.get(1).map(String::as_str).unwrap_or("cli");
 
             if command_name != "cli" && !self.commands.iter().any(|cmd| cmd.name == command_name) {
-                return Err(ParseError::InvalidCommand(command_name.to_owned()));
+                return Err(ParseError::UnknownCommand(command_name.to_owned()));
             }
 
             self.show_help(command_name);
@@ -45,8 +45,10 @@ impl Cli {
         } else if let Some(cmd) = self.commands.iter().find(|cmd| cmd.name == "cli") {
             self.used_command = Some("cli".to_owned());
             cmd
+        } else if env_args.is_empty() {
+            return Err(ParseError::MissingCommand);
         } else {
-            return Err(ParseError::InvalidCommand(potential_cmd_name.to_owned()));
+            return Err(ParseError::UnknownCommand(potential_cmd_name.to_owned()));
         };
 
         // Skip command name when one was explicitly provided
